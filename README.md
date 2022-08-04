@@ -240,6 +240,7 @@ Nest 는 요청 객체에 대한 액세스를 제공한다.
 
 ```typescript
 import { Controller, Get, Req } from '@nestjs/common';
+import { Request } from 'express';
 
 @Controller('cats')
 export class CatsController {
