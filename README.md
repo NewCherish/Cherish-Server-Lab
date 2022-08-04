@@ -1,6 +1,3 @@
-# Cherish-Server-Lab
-서현 🖤-> 정아 &lt;-🖤 지윤 Cherish 연습실
-
 # Nest.js
 
 ## 목차
@@ -12,6 +9,8 @@
 [Directory](#Directory)
 
 [Platform](#Platform)
+
+[Controllers](#Controllers)
 
 ### 들어가기 전에
 
@@ -152,4 +151,151 @@ const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
 하지만 일반적으로 특별히 해당 Platform API 에 직접 접근하려는 게 아닌 이상 할 필요는 없다.
 
+### Controllers
 
+<hr/>
+
+컨트롤러는 들어오는 요청을 처리하고, 응답을 반환하는 일을 한다.
+
+![img](https://docs.nestjs.com/assets/Controllers_1.png)
+
+컨트롤러의 목적은 application 의 특정 요청을 수신하는 것이다.
+
+라우팅 메커니즘이 어떤 컨트롤러에 어떤 요청을 수신 할 지 조절한다.
+
+종종, 각 컨트롤러에 두 가지 이상의 경로(route) 가 존재할 수 있고, 각 경로에서 다른 action 을 수행할 수 있다.
+
+기본 컨트롤러를 만들기 위해 **class** 와 **decorator**를 사용한다.
+
+decorator 는 class 를 필수 메타 데이터와 연결하고, Nest 가 라우팅 Map(요청을 해당 컨트롤러로 연결) 을 생성하도록 한다.
+
+#### Routing
+
+기본 컨트롤러를 정의하는데 필요한 `@Controller()` decorator 를 사용한다.
+
+`@Controller()` decorator 를 사용하면, 관련 경로를 쉽게 그룹화 하고, 반복적인 코드를 최소화 할 수 있다.
+
+``` shell
+$ nest g controller cats
+```
+
+CLI 를 통해 생성할 수도 있다.
+
+```typescript
+import { Controller, Get } from '@nestjs/common';
+
+@Controller('cats')
+export class CatsController {
+  @Get()
+  findAll(): string {
+    return 'return all cats';
+  }
+}
+```
+
+<img width="300" alt="image" src="https://user-images.githubusercontent.com/20807197/182819183-7b074718-43e0-4247-b1f3-280829de73f6.png">
+
+예를 들어 경로 /customers 아래에서 customers entity 와의 상호작용을 관리하는 경로 집합을 그룹화 할 수 있다.
+
+`findAll()`  메서드 앞에 `@Get()`  은 HTTP 요청 decorator 이다.
+
+경로는 컨트롤러에 선언된 decorator 접두사와 특정한 메서드에서 선언된 decorator 와 연결된다.
+
+위 예제에서는 컨트롤러에서 선언한 'cats' 와 `findAll()`  에서 선언된 `@Get` decorator 가 아무 경로를 연결하지 않았으므로 최종적으로` GET '/cats' ` 요청을 이 핸들러에 매핑한다.
+
+즉, 예를 들어 위 예제에서  `@Get('profile')` 일 경우 `GET '/cats/profile'` 로 매핑된다.
+
+이 메서드에서는 응답 상태 코드로 200을 반환한다. 이 경우에는 문자열('return all cats')일 뿐이다.
+
+왜 이런 걸까?
+
+Nest 가 응답을 조작하기 위해 사용하는 2가지 옵션을 알아보자.
+
+
+
+1. **Standard (recommended)**
+
+​	내장 메서드를 사용하면 JS 객체 또는 배열을 반환 할 때 자동으로 JSON 으로 serialized 된다.
+
+​	그러나 JS 기본 타입 (string, number, boolean) 을 반환하면 JSON 이 아닌 값으로 보낸다.
+
+​	값을 반환하기만 하면 Nest 가 알아서 처리한다.
+
+​	또한, 응답 상태 코드는 201을 사용하는 POST 요청을 제외하고는 기본적으로 200 을 반환한다.
+
+​	`@HttpCode()` decorator 를 사용하여 이를 쉽게 조작할 수 있다. (후술함)
+
+2. **Library-specific**
+
+​	`@Res`  decorator 를 메서드 핸들러에 주입하여 라이브러리별 응답 객체를 사용할 수 있다.
+
+​	e.g., `findAll(@Res() response)` 
+
+​	예를 들어, express 에서 사용하는 `response.status(200).send()` 를 사용 할 수도 있다.
+#### Request Object
+
+Nest 는 요청 객체에 대한 액세스를 제공한다.
+
+핸들러에 `@Req() decorator` 추가하여 요청 객체에 접근할 수 있다.	
+
+```typescript
+import { Controller, Get, Req } from '@nestjs/common';
+
+@Controller('cats')
+export class CatsController {
+  @Get()
+  findAll(@Req() req: Request): string {
+    return 'return all cats';
+  }
+}
+```
+
+요청 객체는 query string, parameters, HTTP headers, body 같은 속성을 가지고 있다.
+
+대부분의 경우 이러한 속성을 수동으로 가져올 필요 없이 Nest 에서 제공하는 전용 decorator 를 사용하면 된다.
+
+| decorator            | property                    |
+| -------------------- | --------------------------- |
+| @Request(), @Req()   | req                         |
+| @Response(), @Res()  | res                         |
+| @Next()              | next                        |
+| @Session()           | req.session                 |
+| @Param(key?: string) | req.params, req.params[key] |
+| @Query(key?: string) | req.query, req.query[key]   |
+| @Ip()                | req.ip                      |
+| @HostParam()         | req.hosts                   |
+
+`@Response()`, `@Res()` 를 사용할 경우 Nest 는 해당 핸들러에 대해 **Library-specific mode** 로 설정하게 되고 이 경우에 응답을 반환해야 할 필요가 있다.
+
+즉, 이 경우 일종의 응답 (res.send, res.json 등) 을 반환해야 하고 그렇지 않으면 서버가 중단된다.
+
+> 사용자 지정 decorator 도 생성 가능하지만 후술하겠다.
+
+#### Resources
+
+모든 고양이를 가져오는 엔드포인트 이외에 생성 할 수 있는 create 엔드포인트를 만들어보자
+
+간단하게 @Post() decorator 를 사용하면 된다.
+
+```typescript
+import { Controller, Get, Post, Req } from '@nestjs/common';
+
+@Controller('cats')
+export class CatsController {
+  @Post()
+  createCat(): string {
+    return 'create cat';
+  }
+
+  @Get()
+  findAll(@Req() req: Request): string {
+    return 'return all cats';
+  }
+}
+```
+
+즉, 표준 HTTP methods 를 decorator 로 제공한다.
+
+**@Get(), @Post(), @Put(), @Delete(), @Patch(), @Options(), @Head()**
+
+@All() 은 위 모두를 처리하는 엔드포인트를 정의한다.
