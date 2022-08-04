@@ -7,7 +7,7 @@
 
 [Intro](#Intro)
 
-[Installation](Installation)
+[Installation](#Installation)
 
 ### 들어가기 전에
 
