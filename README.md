@@ -300,3 +300,85 @@ export class CatsController {
 **@Get(), @Post(), @Put(), @Delete(), @Patch(), @Options(), @Head()**
 
 @All() 은 위 모두를 처리하는 엔드포인트를 정의한다.
+
+#### Status Code
+
+언급한대로 기본적으로 상태 코드는 POST 요청을 제외하고는 항상 200이다.
+
+@HttpCode() decorator 를 통해 핸들러 레벨에서 쉽게 바꿀 수 있다.
+
+```typescript
+  @Put()
+  @HttpCode(204)
+  modifyCat(): string {
+    return 'modify cat';
+  }
+```
+
+> HttpCode 는 @nestjs/common 패키지에서 import 한다.
+
+종종 상태 코드가 정적이 아니라 다양한 요인에 의해 달라질 수 있다. 
+
+이 경우 library-specific response 객체를 사용할 수 있다. (`@Res()`)
+
+#### Headers
+
+custom response header 를 위해 `@Header()` decorator 나 library-specific response 객체를 사용 할 수 있다.
+
+```typescript
+@Post()
+@Header('Cache-Control', 'none')
+create() {
+  return 'This action adds a new cat';
+}
+```
+
+#### Redirection
+
+응답을 특정 URL 로 리다이렉션 하려면 `@Redirect()` decorator 나 library-specific response 객체 (`res.redirect()`) 를 사용할 수 있다.
+
+`@Redirect()` decorator 는 optional 한 2개의 arguments 를 가진다. - `url`, `statusCode`
+
+statusCode 의 default 값은 302 이다.
+
+```typescript
+@Get()
+@Redirect('https://nestjs.com', 301)
+```
+
+때때로 동적으로 statusCode 나 URL 을 결정해야 하는 경우가 있다.
+
+```json
+{
+  "url": string,
+  "statusCode": number
+}
+```
+
+다음과 같은 형식으로 반환하여 수행할 수 있다.
+
+```typescript
+@Get('docs')
+@Redirect('https://docs.nestjs.com', 302)
+getDocs(@Query('version') version) {
+  if (version && version === '5') {
+    return { url: 'https://docs.nestjs.com/v5/' };
+  }
+}
+```
+
+반환 값은 `@Redirect()` decorator 에 전달된 모든 인수를 재정의한다.
+
+#### Route Parameters
+
+매개변수가 있는 경로를 정의하기 위해 경로에 route parameter 토큰을 추가하여 동적 값을 찾아낼 수 있다.
+
+```typescript
+  @Get(':id')
+  findCatById(@Param('id') id: string): string {
+    console.log(id);
+    return `return cat's id : ${id}`;
+  }
+```
+
+
