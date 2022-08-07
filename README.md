@@ -12,6 +12,8 @@
 
 [Controllers](#Controllers)
 
+[Providers](#Providers)
+
 ### 들어가기 전에
 
 해당 내용은 [Nest.js official document](https://docs.nestjs.com/) 내용을 개인적으로 학습하며, 번역한 글 입니다.
@@ -485,5 +487,211 @@ export class AppModule {}
 이 접근 방식이 제대로 작동하고, 실제로 응답 객체를 완전히 제어할 수 있어 어떤 면에서는 더 유연하지만 주의해서 사용해야한다.
 
  주요 단점은 코드가 플랫폼에 종속되고 테스트하기가 더 어려워진다. (응답 객체들을 mocking 해야함)
+
+### Providers
+
+Providers 는 Nest 의 기본 개념이다.
+
+기본 Nest class 의 대부분은 providers, services, repositories, factories, helpers 로 취급될 수 있다.
+
+provider의 주요 아이디어는 의존성 주입이다. 이것은 객체들이 서로 다양한 관계를 만들 수 있다는 것을 의미하며, 객체의 인스턴스들을 '연결' 하는 기능은 크게 Nest runtime system 에 위임될 수 있다.
+
+https://www.wisewiredbooks.com/nestjs/overview/04-provider.html
+
+이 블로그에 개념들이 조금 더 쉽게 설명되어 있어 가져왔음 
+
+![img](https://docs.nestjs.com/assets/Components_1.png)
+
+이전에 우리는 간단한 `CatsController` 를 만들었다. 컨트롤러는 HTTP 요청을 처리하고, 더 복잡한 작업은 provider 에게 위임해야한다. 
+
+provider 는 module 에서 providers 로 선언된 javascript classes 이다.
+
+> Nest 를 사용하면 종속성을 보다 OO 방식으로 설계하고 구성할 수 있으므로 우리는 SOLID 원칙을 따르는걸 추천한다.
+
+#### Services
+
+간단한 `CatsService` 를 만드는 것부터 시작하자.
+
+이 서비스는 데이터 저장 및 검색을 담당하며, `CatsController` 에서 사용하도록 설계되었으므로 provider 의 좋은 후보이다.
+
+> $ nest g service cats 명령어로 쉽게 CLI 를 사용하여 만들 수 있다.
+
+`cats.service.ts`
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { Cat } from './interfaces/cat.interface';
+
+@Injectable()
+export class CatsService {
+    private readonly cats: Cat[] = [];
+
+    create(cat: Cat) {
+        this.cats.push(cat);
+    }
+
+    findAll(): Cat[] {
+        return this.cats;
+    }
+}
+```
+
+`CatsService` 는 하나의 속성과 두개의 메서드가 있는 기본 클래스이다.
+
+유일한 새로운 기능은 `@Injectable()` decorator 를 사용한다는 것이다.
+
+`@Injectable()` decorator 는 `CatsService` 가 Nest IoC container 에서 관리할 수 있는 클래스임을 선언하는 메타데이터를 첨부한다.
+
+Cat interface 는 다음과 같다.
+
+`interfaces/cat.interface.ts`
+
+```typescript
+export interface Cat {
+  name: string;
+  age: number;
+  breed: string;
+}
+```
+
+이제 고양이를 검색하는 서비스 클래스가 있으므로 `CatsController` 에서 사용해보자.
+
+```typescript
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { CreateCatDto } from './dto/create-cat.dto';
+import { CatsService } from './cats.service';
+import { Cat } from './interfaces/cat.interface';
+
+@Controller('cats')
+export class CatsController {
+  constructor(private catsService: CatsService) {}
+
+  @Post()
+  async create(@Body() createCatDto: CreateCatDto) {
+    this.catsService.create(createCatDto);
+  }
+
+  @Get()
+  async findAll(): Promise<Cat[]> {
+    return this.catsService.findAll();
+  }
+}
+```
+
+`CatsService` 는 class constructor 를 통해 주입된다. 
+
+`private` 구문에 주목해보자.
+
+이 약어를 사용하면 동일한 위치에서 catsService member를 즉시 선언하고 초기화 할 수 있다.
+
+#### Dependency injection
+
+Nest 는 일반적으로 **Dependency Injection(DI)** 로 알려진 강력한 디자인 패턴을 기반으로 구축되었다.
+
+Nest 에서는 Typescript 기능 덕분에 종속성이 type 별로 해결되어 매우 쉽게 관리할 수 있다.
+
+아래 예제에서 Nest 는 `CatsService` 의 인스턴스를 만들고 반환함으로써 `catsService`를 resolve 한다.
+
+(또는 싱글톤의 일반적인 경우 기존 인스턴스를 이미 다른곳에서 요청한 경우 반환)
+
+이 종속성은 resolved 되고 컨트롤러의 생성자로 전달된다. (또는 속성에 할당)
+
+```typescript
+constructor(private catsService: CatsService) {}
+```
+
+#### Scope
+
+providers 는 일반적으로 애플리케이션 lifecycle 과 동기화된 lifetime 을 갖는다.
+
+애플리케이션이 [bootstrap](https://www.wisewiredbooks.com/term-dict/common/bootstrap.html) 되면 
+
+모든 종속성이 resolved 되어야하기 때문에 모든 provider 를 인스턴스화해야한다.
+
+마찬가지로 애플리케이션이 종료되면, 모든 provider 가 소멸된다. 
+
+이러한 provider lifetime 을 **request-scoped** 로 만들 수도 있다
+
+여기서 더 읽어보자 [here](https://docs.nestjs.com/fundamentals/injection-scopes)..
+
+#### Optional providers
+
+경우에 따라 반드시 resolved 되어야 할 필요가 없는 dependencies 도 있다.
+
+예를 들어, 클래스가 configuration 객체에 의존 할 수 있지만, 아무것도 전달되지 않을 경우 기본 값을 사용해야만 한다.
+
+이러한 경우 configuration provider 가 없어도 오류가 발생하지 않기 때문에 dependency 가 optional 해야한다.
+
+provider 가 optional 함을 나타내기 위해 생성자에서  `@Optional()` decorator 를 사용한다.
+
+```typescript
+import { Injectable, Optional, Inject } from '@nestjs/common';
+
+@Injectable()
+export class HttpService<T> {
+  constructor(@Optional() @Inject('HTTP_OPTIONS') private httpClient: T) {}
+}
+```
+
+#### Property-based injection
+
+우리가 지금까지 사용한 기술은 생성자 기반 주입인데 constructor method 를 통해 provider 가 주입되기 때문이다.
+
+때때로 **property-based-injection** 이 유용할 수도 있다.
+
+예를 들어, 최상위 클래스가 여러 provider 에 의존할 경우 생성자의 하위 클래스에서 super() 를 호출하는 것은 매우 별로일 수 있다. 
+
+이것을 피하기 위해 property level 에서 `@Inject()` decorator 를 사용할 수 있다.
+
+```typescript
+import { Injectable, Inject } from '@nestjs/common';
+
+@Injectable()
+export class HttpService<T> {
+  @Inject('HTTP_OPTIONS')
+  private readonly httpClient: T;
+}
+```
+
+> 클래스가 다른 provider 를 확장하지 않는 경우 constructor-based injection 을 선호해야한다.
+
+#### Provider registration
+
+이제 provider (`CatsService`) 를 정의했고, 이를 소비할 수 있는 `CatsController` 가 있으므로 우리는 주입을 수행할 수 있도록 이 서비스를 Nest 에 등록해야한다.
+
+모듈 파일 (`app.module.ts`) 를 수정하고 `@Module()` decorator 의 providers array 에 서비스를 추가한다.
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { CatsController } from './cats/cats.controller';
+import { CatsService } from './cats/cats.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController, CatsController],
+  providers: [AppService, CatsService],
+})
+export class AppModule {}
+```
+
+Nest 는 이제 `CatsController` 의 종속성을 해결할 수 있다.
+
+디렉터리 구조는 아래와 같다.
+
+```
+src
+|_____cats
+|     |_____dto
+|     |     |___create-cat.dto.ts
+|     |_____interfaces
+|     |     |___cat.interface.ts
+|     |_____cats.controller.ts
+|     |_____cats.service.ts
+|_____app.module.ts
+|_____main.ts
+```
+
 
 
