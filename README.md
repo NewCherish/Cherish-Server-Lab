@@ -381,4 +381,109 @@ getDocs(@Query('version') version) {
   }
 ```
 
+#### Asynchronicity
+
+모든 비동기 함수는 Promise 를 반환해야한다.
+
+```typescript
+  @Get()
+  async findAll(): Promise<any[]> {
+    return [];
+  }
+```
+
+또한 RxJS Observable streams 를 반환할 수도 있다.
+
+```typescript
+@Get()
+findAll(): Observable<any[]> {
+  return of([]);
+}
+```
+
+#### Request payloads
+
+이전 POST 예제에서는 route handler 가 어떠한 클라이언트 params 를 받지 않았다.
+
+`@Body()` decorator 를 추가하여 고쳐보자.
+
+Typescript 를 사용하는 경우 DTO (Data Transfer Object) 를 만들어야한다.
+
+우리는 TS 의 interface 를 통해 DTO 를 만들 수 있다.
+
+흥미롭게도, 우리는 여기서 class를 사용하는 걸 추천한다. 왜일까?
+
+class 는 Javascript ES6 표준이므로 컴파일 된 JS 에서 실제 Entity 로 보존된다.
+
+반면에 TS interface 는 변환중에 제거되기 때문에 Nest 가 런타임에 이를 참조할 수 없다.
+
+`CreateCatDto` class 를 만들어보자.
+
+```typescript
+export class CreateCatDto {
+  name: string;
+  age: number;
+  breed: string;
+}
+```
+
+`CatsController` 에서 새로 생성한 DTO 를 사용할 수 있다.
+
+```typescript
+@Post()
+async createcat(@Body() createCatDto: CreateCatDto) {
+  return 'create cat by using CreateCatDto';
+}
+```
+
+#### Getting up and running
+
+컨트롤러가 완전히 정의되고 나서 Nest 는 아직까지 CatsController 가 존재하는지 알지 못하며, 결과적으로 이 클래스의 인스턴스를 생성하지 않는다.
+
+컨트롤러는 항상 module 에 속하므로, `@Module()` decorator 내에 컨트롤러 배열을 포함한다.
+
+`app.module.ts`
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { CatsController } from './cats/cats.controller';
+
+@Module({
+  imports: [],
+  controllers: [AppController, CatsController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+`@Module()` decorator 를 사용해 module class 에 metadata 를 넣었으며, 이제 Nest 는 마운트 되어야 하는 컨트롤러를 쉽게 반영할 수 있다.
+
+#### Library-specific approach
+
+지금까지는 응답을 조작하는 Nest 표준 방식에 대해 알아봤다.
+
+응답을 조작하는 두번째 방식은 library-specific 응답 객체를 사용하는 것이다.
+
+특정한 응답 객체를 주입하기 위해 우리는 `@Res()` decorator 를 사용해야한다.
+
+`CatsController` 를 다시 작성해보자.
+
+ ```typescript
+  @Post()
+  create(@Res() res: Response) {
+    res.status(HttpStatus.CREATED).send();
+  }
+
+  @Get()
+  findAll(@Res() res: Response) {
+    res.status(HttpStatus.OK).json([]);
+  }
+ ```
+
+이 접근 방식이 제대로 작동하고, 실제로 응답 객체를 완전히 제어할 수 있어 어떤 면에서는 더 유연하지만 주의해서 사용해야한다.
+
+ 주요 단점은 코드가 플랫폼에 종속되고 테스트하기가 더 어려워진다. (응답 객체들을 mocking 해야함)
+
 
