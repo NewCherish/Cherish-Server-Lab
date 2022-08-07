@@ -11,10 +11,23 @@ import {
   Res,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { CatsService } from './cats.service';
 import { CreateCatDto } from './create-cat.dto';
+import { Cat } from './interfaces/cat.interface';
 
 @Controller('cats')
 export class CatsController {
+  constructor(private catsService: CatsService) {}
+
+  @Post()
+  async create(@Body() createCatDto: CreateCatDto) {
+    this.catsService.create(createCatDto);
+  }
+
+  @Get()
+  async findAll(): Promise<Cat[]> {
+    return this.catsService.findAll();
+  }
   // @Post()
   // createCat(): string {
   //   return 'create cat';
@@ -25,21 +38,21 @@ export class CatsController {
   //   return 'create cat by using CreateCatDto';
   // }
 
-  @Post()
-  create(@Res() res: Response) {
-    res.status(HttpStatus.CREATED).send();
-  }
+  // @Post()
+  // create(@Res() res: Response) {
+  //   res.status(HttpStatus.CREATED).send();
+  // }
 
-  @Get()
-  findAll(@Res() res: Response) {
-    res.status(HttpStatus.OK).json([]);
-  }
+  // @Get()
+  // findAll(@Res() res: Response) {
+  //   res.status(HttpStatus.OK).json([]);
+  // }
 
-  @Put()
-  @HttpCode(204)
-  modifyCat(): string {
-    return 'modify cat';
-  }
+  // @Put()
+  // @HttpCode(204)
+  // modifyCat(): string {
+  //   return 'modify cat';
+  // }
 
   // @Get()
   // findAll(@Req() req: Request): string {
@@ -51,9 +64,9 @@ export class CatsController {
   //   return [];
   // }
 
-  @Get(':id')
-  findCatById(@Param('id') id: string): string {
-    console.log(id);
-    return `return cat's id : ${id}`;
-  }
+  // @Get(':id')
+  // findCatById(@Param('id') id: string): string {
+  //   console.log(id);
+  //   return `return cat's id : ${id}`;
+  // }
 }
