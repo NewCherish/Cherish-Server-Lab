@@ -1,19 +1,38 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
   Req,
+  Res,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
+import { CreateCatDto } from './create-cat.dto';
 
 @Controller('cats')
 export class CatsController {
+  // @Post()
+  // createCat(): string {
+  //   return 'create cat';
+  // }
+
+  // @Post()
+  // async createcat(@Body() createCatDto: CreateCatDto) {
+  //   return 'create cat by using CreateCatDto';
+  // }
+
   @Post()
-  createCat(): string {
-    return 'create cat';
+  create(@Res() res: Response) {
+    res.status(HttpStatus.CREATED).send();
+  }
+
+  @Get()
+  findAll(@Res() res: Response) {
+    res.status(HttpStatus.OK).json([]);
   }
 
   @Put()
@@ -22,10 +41,15 @@ export class CatsController {
     return 'modify cat';
   }
 
-  @Get()
-  findAll(@Req() req: Request): string {
-    return 'return all cats';
-  }
+  // @Get()
+  // findAll(@Req() req: Request): string {
+  //   return 'return all cats';
+  // }
+
+  // @Get()
+  // async findAll(): Promise<any[]> {
+  //   return [];
+  // }
 
   @Get(':id')
   findCatById(@Param('id') id: string): string {
