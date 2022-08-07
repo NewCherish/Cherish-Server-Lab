@@ -1,2 +1,697 @@
-# Cherish-Server-Lab
-서현 🖤-> 정아 &lt;-🖤 지윤 Cherish 연습실
+# Nest.js
+
+## 목차
+
+[Intro](#Intro)
+
+[Installation](#Installation)
+
+[Directory](#Directory)
+
+[Platform](#Platform)
+
+[Controllers](#Controllers)
+
+[Providers](#Providers)
+
+### 들어가기 전에
+
+해당 내용은 [Nest.js official document](https://docs.nestjs.com/) 내용을 개인적으로 학습하며, 번역한 글 입니다.
+
+### Intro
+
+<hr/>
+
+Nest.js 란 효율적이고, 확장 가능한 Node.js Server application 을 구축하기 위한 framework 이다.
+
+Typescript 를 지원하고, 또한 Javascript 역시 지원한다. 더불어 OOP (객체 지향 프로그래밍), FP(함수형 프로그래밍) 의 요소를 결합하고 있다.
+
+Nest 는 Express 같은 HTTP Server framework 를 사용하고, 선택적으로 Fastify 도 사용할 수 있다.
+
+### Installation
+
+<hr/>
+
+```shell
+$ npm i -g @nestjs/cli
+$ nest new project-name
+```
+
+시작하기 위해 Nest Cli 를 사용할 수 있다.
+
+스타터 프로젝트롤 clone 하여 시작할 수도 있지만, 처음 사용자는 Nest Cli 를 통해 만드는 것을 추천한다.
+
+typescript 의 strict 모드를 활성화 시켜 만드려면 --strict option 을 추가해준다.
+
+<img width="400" alt="image" src="https://user-images.githubusercontent.com/20807197/182793064-5e07d710-93ad-401b-8106-ac5836bb329a.png">
+
+
+package manager 는 yarn 을 선택했다.
+
+```json
+{
+  "singleQuote": true,
+  "tabWidth": 2,
+  "printWidth": 80,
+  "semi": true,
+  "trailingComma": "all"
+}
+```
+
+prettier 와 eslint 가 기본적으로 설정되지만 조금 추가해줬다.
+
+프로젝트가 만들어지고 `yarn start`  를 터미널에 입력하면, localhost:3000 에서 서버가 시작된다.
+
+변경 사항을 감지하려면 `yarn start:dev`  를 입력하면 된다.
+
+<img width="300" alt="image" src="https://user-images.githubusercontent.com/20807197/182793092-1350a6b8-39ae-43ad-ad49-95e68e7743a3.png">
+
+### Directory
+
+<hr/>
+
+프로젝트를 생성하면 src/ 폴더 내부에 core 파일이 생긴다.
+
+간략하게 살펴보면,
+
+`app.controller.ts` 단일 경로가 있는 기본 컨트롤러
+
+`app.controller.spec.ts` 컨트롤러를 위한 유닛 테스트
+
+`app.module.ts` 애플리케이션의 루트 모듈
+
+`app.service.ts` 기본 서비스
+
+`main.ts` 핵심 기능인 `NestFactory` 를 사용하여 Nest application instance 를 생성하는 시작 파일
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+`main.ts` 는 application 을 bootstrap 하는 비동기 함수를 포함한다.
+
+Nest application instance 를 사용하기 위해 우리는 `NestFactory` class 를 사용한다.
+
+`NestFactory` 는 application instance 를 생성하게 해주는 몇가지 정적 메서드를 제공한다.
+
+`create()` 은 `INestApplication` 인터페이스를 수행하는 application 객체를 반환한다.
+
+이 객체는 후술할 메서드 집합을 제공한다.
+
+`main.ts` 에서 우리는 단순히 application 이 inbound HTTP 요청을 기다리게 하는 HTTP listner 를 시작하기만 하면 된다.
+
+Nest CLI 를 통해 생성된 프로젝트는 개발자가 각 모듈을 고유한 전용 디렉터리에 보관하도록 하는 규칙을 따르도록 권장하는 초기 프로젝트 구조이다.
+
+> 기본적으로 application 을 생성하는 동안 발생하는 오류는 code 1과 함께 종료된다.
+>
+> 따라서 에러를 발생시키고 싶으면 abortOnError 옵션을 비활성화 하면 된다.
+>
+> e.g., `NestFactory.create(AppModule, { abortOnError: false })`
+
+### Platform 
+
+<hr/>
+
+우선 Nest 는 Platform 에 구애받지 않는 프레임워크를 목표로 한다.
+
+플랫폼 독립성을 통해 개발자가 여러 다른 유형의 application 에서 재사용 가능한 논리적인 부분을 만들 수 있도록 한다.
+
+기본적으로 두가지 HTTP Platform 을 제공한다. - express, fastify
+
+1. `platform-express`
+
+잘 알려진 minimalist 웹 프레임워크이다.
+
+커뮤니티에서 구현해둔 많은 리소스가 존재한다.
+
+`@nestjs/patform-express` package 를 기본적으로 사용한다.
+
+많은 사용자가 express 를 사용하고 있으며 특별히 이걸 사용하기 위해 다른 걸 할 필요는 없다.
+
+2. `platform-fastify`
+
+최대 성능과 속도 제공에 중점을 둔 고 성능, 낮은 오버헤드 프레임워크이다.
+
+express 에 비해 아직 사용성이나 커뮤니티는 낮지만, 굉장한 속도를 제공한다.
+
+> 어떤 platform 이 사용되든, 자체 interface 를 노출한다.
+>
+> `NestExpressAplication` , `NestFastifyApplication` 
+
+`NestFactory.create()` 메서드에 직접 type 을 넘길 수도 있다.
+
+```typescript
+const app = await NestFactory.create<NestExpressApplication>(AppModule);
+```
+
+하지만 일반적으로 특별히 해당 Platform API 에 직접 접근하려는 게 아닌 이상 할 필요는 없다.
+
+### Controllers
+
+<hr/>
+
+컨트롤러는 들어오는 요청을 처리하고, 응답을 반환하는 일을 한다.
+
+![img](https://docs.nestjs.com/assets/Controllers_1.png)
+
+컨트롤러의 목적은 application 의 특정 요청을 수신하는 것이다.
+
+라우팅 메커니즘이 어떤 컨트롤러에 어떤 요청을 수신 할 지 조절한다.
+
+종종, 각 컨트롤러에 두 가지 이상의 경로(route) 가 존재할 수 있고, 각 경로에서 다른 action 을 수행할 수 있다.
+
+기본 컨트롤러를 만들기 위해 **class** 와 **decorator**를 사용한다.
+
+decorator 는 class 를 필수 메타 데이터와 연결하고, Nest 가 라우팅 Map(요청을 해당 컨트롤러로 연결) 을 생성하도록 한다.
+
+#### Routing
+
+기본 컨트롤러를 정의하는데 필요한 `@Controller()` decorator 를 사용한다.
+
+`@Controller()` decorator 를 사용하면, 관련 경로를 쉽게 그룹화 하고, 반복적인 코드를 최소화 할 수 있다.
+
+``` shell
+$ nest g controller cats
+```
+
+CLI 를 통해 생성할 수도 있다.
+
+```typescript
+import { Controller, Get } from '@nestjs/common';
+
+@Controller('cats')
+export class CatsController {
+  @Get()
+  findAll(): string {
+    return 'return all cats';
+  }
+}
+```
+
+<img width="300" alt="image" src="https://user-images.githubusercontent.com/20807197/182819183-7b074718-43e0-4247-b1f3-280829de73f6.png">
+
+예를 들어 경로 /customers 아래에서 customers entity 와의 상호작용을 관리하는 경로 집합을 그룹화 할 수 있다.
+
+`findAll()`  메서드 앞에 `@Get()`  은 HTTP 요청 decorator 이다.
+
+경로는 컨트롤러에 선언된 decorator 접두사와 특정한 메서드에서 선언된 decorator 와 연결된다.
+
+위 예제에서는 컨트롤러에서 선언한 'cats' 와 `findAll()`  에서 선언된 `@Get` decorator 가 아무 경로를 연결하지 않았으므로 최종적으로` GET '/cats' ` 요청을 이 핸들러에 매핑한다.
+
+즉, 예를 들어 위 예제에서  `@Get('profile')` 일 경우 `GET '/cats/profile'` 로 매핑된다.
+
+이 메서드에서는 응답 상태 코드로 200을 반환한다. 이 경우에는 문자열('return all cats')일 뿐이다.
+
+왜 이런 걸까?
+
+Nest 가 응답을 조작하기 위해 사용하는 2가지 옵션을 알아보자.
+
+
+
+1. **Standard (recommended)**
+
+​	내장 메서드를 사용하면 JS 객체 또는 배열을 반환 할 때 자동으로 JSON 으로 serialized 된다.
+
+​	그러나 JS 기본 타입 (string, number, boolean) 을 반환하면 JSON 이 아닌 값으로 보낸다.
+
+​	값을 반환하기만 하면 Nest 가 알아서 처리한다.
+
+​	또한, 응답 상태 코드는 201을 사용하는 POST 요청을 제외하고는 기본적으로 200 을 반환한다.
+
+​	`@HttpCode()` decorator 를 사용하여 이를 쉽게 조작할 수 있다. (후술함)
+
+2. **Library-specific**
+
+​	`@Res`  decorator 를 메서드 핸들러에 주입하여 라이브러리별 응답 객체를 사용할 수 있다.
+
+​	e.g., `findAll(@Res() response)` 
+
+​	예를 들어, express 에서 사용하는 `response.status(200).send()` 를 사용 할 수도 있다.
+#### Request Object
+
+Nest 는 요청 객체에 대한 액세스를 제공한다.
+
+핸들러에 `@Req() decorator` 추가하여 요청 객체에 접근할 수 있다.	
+
+```typescript
+import { Controller, Get, Req } from '@nestjs/common';
+import { Request } from 'express';
+
+@Controller('cats')
+export class CatsController {
+  @Get()
+  findAll(@Req() req: Request): string {
+    return 'return all cats';
+  }
+}
+```
+
+요청 객체는 query string, parameters, HTTP headers, body 같은 속성을 가지고 있다.
+
+대부분의 경우 이러한 속성을 수동으로 가져올 필요 없이 Nest 에서 제공하는 전용 decorator 를 사용하면 된다.
+
+| decorator            | property                    |
+| -------------------- | --------------------------- |
+| @Request(), @Req()   | req                         |
+| @Response(), @Res()  | res                         |
+| @Next()              | next                        |
+| @Session()           | req.session                 |
+| @Param(key?: string) | req.params, req.params[key] |
+| @Query(key?: string) | req.query, req.query[key]   |
+| @Ip()                | req.ip                      |
+| @HostParam()         | req.hosts                   |
+
+`@Response()`, `@Res()` 를 사용할 경우 Nest 는 해당 핸들러에 대해 **Library-specific mode** 로 설정하게 되고 이 경우에 응답을 반환해야 할 필요가 있다.
+
+즉, 이 경우 일종의 응답 (res.send, res.json 등) 을 반환해야 하고 그렇지 않으면 서버가 중단된다.
+
+> 사용자 지정 decorator 도 생성 가능하지만 후술하겠다.
+
+#### Resources
+
+모든 고양이를 가져오는 엔드포인트 이외에 생성 할 수 있는 create 엔드포인트를 만들어보자
+
+간단하게 @Post() decorator 를 사용하면 된다.
+
+```typescript
+import { Controller, Get, Post, Req } from '@nestjs/common';
+
+@Controller('cats')
+export class CatsController {
+  @Post()
+  createCat(): string {
+    return 'create cat';
+  }
+
+  @Get()
+  findAll(@Req() req: Request): string {
+    return 'return all cats';
+  }
+}
+```
+
+즉, 표준 HTTP methods 를 decorator 로 제공한다.
+
+**@Get(), @Post(), @Put(), @Delete(), @Patch(), @Options(), @Head()**
+
+@All() 은 위 모두를 처리하는 엔드포인트를 정의한다.
+
+#### Status Code
+
+언급한대로 기본적으로 상태 코드는 POST 요청을 제외하고는 항상 200이다.
+
+@HttpCode() decorator 를 통해 핸들러 레벨에서 쉽게 바꿀 수 있다.
+
+```typescript
+  @Put()
+  @HttpCode(204)
+  modifyCat(): string {
+    return 'modify cat';
+  }
+```
+
+> HttpCode 는 @nestjs/common 패키지에서 import 한다.
+
+종종 상태 코드가 정적이 아니라 다양한 요인에 의해 달라질 수 있다. 
+
+이 경우 library-specific response 객체를 사용할 수 있다. (`@Res()`)
+
+#### Headers
+
+custom response header 를 위해 `@Header()` decorator 나 library-specific response 객체를 사용 할 수 있다.
+
+```typescript
+@Post()
+@Header('Cache-Control', 'none')
+create() {
+  return 'This action adds a new cat';
+}
+```
+
+#### Redirection
+
+응답을 특정 URL 로 리다이렉션 하려면 `@Redirect()` decorator 나 library-specific response 객체 (`res.redirect()`) 를 사용할 수 있다.
+
+`@Redirect()` decorator 는 optional 한 2개의 arguments 를 가진다. - `url`, `statusCode`
+
+statusCode 의 default 값은 302 이다.
+
+```typescript
+@Get()
+@Redirect('https://nestjs.com', 301)
+```
+
+때때로 동적으로 statusCode 나 URL 을 결정해야 하는 경우가 있다.
+
+```json
+{
+  "url": string,
+  "statusCode": number
+}
+```
+
+다음과 같은 형식으로 반환하여 수행할 수 있다.
+
+```typescript
+@Get('docs')
+@Redirect('https://docs.nestjs.com', 302)
+getDocs(@Query('version') version) {
+  if (version && version === '5') {
+    return { url: 'https://docs.nestjs.com/v5/' };
+  }
+}
+```
+
+반환 값은 `@Redirect()` decorator 에 전달된 모든 인수를 재정의한다.
+
+#### Route Parameters
+
+매개변수가 있는 경로를 정의하기 위해 경로에 route parameter 토큰을 추가하여 동적 값을 찾아낼 수 있다.
+
+```typescript
+  @Get(':id')
+  findCatById(@Param('id') id: string): string {
+    console.log(id);
+    return `return cat's id : ${id}`;
+  }
+```
+
+#### Asynchronicity
+
+모든 비동기 함수는 Promise 를 반환해야한다.
+
+```typescript
+  @Get()
+  async findAll(): Promise<any[]> {
+    return [];
+  }
+```
+
+또한 RxJS Observable streams 를 반환할 수도 있다.
+
+```typescript
+@Get()
+findAll(): Observable<any[]> {
+  return of([]);
+}
+```
+
+#### Request payloads
+
+이전 POST 예제에서는 route handler 가 어떠한 클라이언트 params 를 받지 않았다.
+
+`@Body()` decorator 를 추가하여 고쳐보자.
+
+Typescript 를 사용하는 경우 DTO (Data Transfer Object) 를 만들어야한다.
+
+우리는 TS 의 interface 를 통해 DTO 를 만들 수 있다.
+
+흥미롭게도, 우리는 여기서 class를 사용하는 걸 추천한다. 왜일까?
+
+class 는 Javascript ES6 표준이므로 컴파일 된 JS 에서 실제 Entity 로 보존된다.
+
+반면에 TS interface 는 변환중에 제거되기 때문에 Nest 가 런타임에 이를 참조할 수 없다.
+
+`CreateCatDto` class 를 만들어보자.
+
+```typescript
+export class CreateCatDto {
+  name: string;
+  age: number;
+  breed: string;
+}
+```
+
+`CatsController` 에서 새로 생성한 DTO 를 사용할 수 있다.
+
+```typescript
+@Post()
+async createcat(@Body() createCatDto: CreateCatDto) {
+  return 'create cat by using CreateCatDto';
+}
+```
+
+#### Getting up and running
+
+컨트롤러가 완전히 정의되고 나서 Nest 는 아직까지 CatsController 가 존재하는지 알지 못하며, 결과적으로 이 클래스의 인스턴스를 생성하지 않는다.
+
+컨트롤러는 항상 module 에 속하므로, `@Module()` decorator 내에 컨트롤러 배열을 포함한다.
+
+`app.module.ts`
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { CatsController } from './cats/cats.controller';
+
+@Module({
+  imports: [],
+  controllers: [AppController, CatsController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+`@Module()` decorator 를 사용해 module class 에 metadata 를 넣었으며, 이제 Nest 는 마운트 되어야 하는 컨트롤러를 쉽게 반영할 수 있다.
+
+#### Library-specific approach
+
+지금까지는 응답을 조작하는 Nest 표준 방식에 대해 알아봤다.
+
+응답을 조작하는 두번째 방식은 library-specific 응답 객체를 사용하는 것이다.
+
+특정한 응답 객체를 주입하기 위해 우리는 `@Res()` decorator 를 사용해야한다.
+
+`CatsController` 를 다시 작성해보자.
+
+ ```typescript
+  @Post()
+  create(@Res() res: Response) {
+    res.status(HttpStatus.CREATED).send();
+  }
+
+  @Get()
+  findAll(@Res() res: Response) {
+    res.status(HttpStatus.OK).json([]);
+  }
+ ```
+
+이 접근 방식이 제대로 작동하고, 실제로 응답 객체를 완전히 제어할 수 있어 어떤 면에서는 더 유연하지만 주의해서 사용해야한다.
+
+ 주요 단점은 코드가 플랫폼에 종속되고 테스트하기가 더 어려워진다. (응답 객체들을 mocking 해야함)
+
+### Providers
+
+Providers 는 Nest 의 기본 개념이다.
+
+기본 Nest class 의 대부분은 providers, services, repositories, factories, helpers 로 취급될 수 있다.
+
+provider의 주요 아이디어는 의존성 주입이다. 이것은 객체들이 서로 다양한 관계를 만들 수 있다는 것을 의미하며, 객체의 인스턴스들을 '연결' 하는 기능은 크게 Nest runtime system 에 위임될 수 있다.
+
+https://www.wisewiredbooks.com/nestjs/overview/04-provider.html
+
+이 블로그에 개념들이 조금 더 쉽게 설명되어 있어 가져왔음 
+
+![img](https://docs.nestjs.com/assets/Components_1.png)
+
+이전에 우리는 간단한 `CatsController` 를 만들었다. 컨트롤러는 HTTP 요청을 처리하고, 더 복잡한 작업은 provider 에게 위임해야한다. 
+
+provider 는 module 에서 providers 로 선언된 javascript classes 이다.
+
+> Nest 를 사용하면 종속성을 보다 OO 방식으로 설계하고 구성할 수 있으므로 우리는 SOLID 원칙을 따르는걸 추천한다.
+
+#### Services
+
+간단한 `CatsService` 를 만드는 것부터 시작하자.
+
+이 서비스는 데이터 저장 및 검색을 담당하며, `CatsController` 에서 사용하도록 설계되었으므로 provider 의 좋은 후보이다.
+
+> $ nest g service cats 명령어로 쉽게 CLI 를 사용하여 만들 수 있다.
+
+`cats.service.ts`
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { Cat } from './interfaces/cat.interface';
+
+@Injectable()
+export class CatsService {
+    private readonly cats: Cat[] = [];
+
+    create(cat: Cat) {
+        this.cats.push(cat);
+    }
+
+    findAll(): Cat[] {
+        return this.cats;
+    }
+}
+```
+
+`CatsService` 는 하나의 속성과 두개의 메서드가 있는 기본 클래스이다.
+
+유일한 새로운 기능은 `@Injectable()` decorator 를 사용한다는 것이다.
+
+`@Injectable()` decorator 는 `CatsService` 가 Nest IoC container 에서 관리할 수 있는 클래스임을 선언하는 메타데이터를 첨부한다.
+
+Cat interface 는 다음과 같다.
+
+`interfaces/cat.interface.ts`
+
+```typescript
+export interface Cat {
+  name: string;
+  age: number;
+  breed: string;
+}
+```
+
+이제 고양이를 검색하는 서비스 클래스가 있으므로 `CatsController` 에서 사용해보자.
+
+```typescript
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { CreateCatDto } from './dto/create-cat.dto';
+import { CatsService } from './cats.service';
+import { Cat } from './interfaces/cat.interface';
+
+@Controller('cats')
+export class CatsController {
+  constructor(private catsService: CatsService) {}
+
+  @Post()
+  async create(@Body() createCatDto: CreateCatDto) {
+    this.catsService.create(createCatDto);
+  }
+
+  @Get()
+  async findAll(): Promise<Cat[]> {
+    return this.catsService.findAll();
+  }
+}
+```
+
+`CatsService` 는 class constructor 를 통해 주입된다. 
+
+`private` 구문에 주목해보자.
+
+이 약어를 사용하면 동일한 위치에서 catsService member를 즉시 선언하고 초기화 할 수 있다.
+
+#### Dependency injection
+
+Nest 는 일반적으로 **Dependency Injection(DI)** 로 알려진 강력한 디자인 패턴을 기반으로 구축되었다.
+
+Nest 에서는 Typescript 기능 덕분에 종속성이 type 별로 해결되어 매우 쉽게 관리할 수 있다.
+
+아래 예제에서 Nest 는 `CatsService` 의 인스턴스를 만들고 반환함으로써 `catsService`를 resolve 한다.
+
+(또는 싱글톤의 일반적인 경우 기존 인스턴스를 이미 다른곳에서 요청한 경우 반환)
+
+이 종속성은 resolved 되고 컨트롤러의 생성자로 전달된다. (또는 속성에 할당)
+
+```typescript
+constructor(private catsService: CatsService) {}
+```
+
+#### Scope
+
+providers 는 일반적으로 애플리케이션 lifecycle 과 동기화된 lifetime 을 갖는다.
+
+애플리케이션이 [bootstrap](https://www.wisewiredbooks.com/term-dict/common/bootstrap.html) 되면 
+
+모든 종속성이 resolved 되어야하기 때문에 모든 provider 를 인스턴스화해야한다.
+
+마찬가지로 애플리케이션이 종료되면, 모든 provider 가 소멸된다. 
+
+이러한 provider lifetime 을 **request-scoped** 로 만들 수도 있다
+
+여기서 더 읽어보자 [here](https://docs.nestjs.com/fundamentals/injection-scopes)..
+
+#### Optional providers
+
+경우에 따라 반드시 resolved 되어야 할 필요가 없는 dependencies 도 있다.
+
+예를 들어, 클래스가 configuration 객체에 의존 할 수 있지만, 아무것도 전달되지 않을 경우 기본 값을 사용해야만 한다.
+
+이러한 경우 configuration provider 가 없어도 오류가 발생하지 않기 때문에 dependency 가 optional 해야한다.
+
+provider 가 optional 함을 나타내기 위해 생성자에서  `@Optional()` decorator 를 사용한다.
+
+```typescript
+import { Injectable, Optional, Inject } from '@nestjs/common';
+
+@Injectable()
+export class HttpService<T> {
+  constructor(@Optional() @Inject('HTTP_OPTIONS') private httpClient: T) {}
+}
+```
+
+#### Property-based injection
+
+우리가 지금까지 사용한 기술은 생성자 기반 주입인데 constructor method 를 통해 provider 가 주입되기 때문이다.
+
+때때로 **property-based-injection** 이 유용할 수도 있다.
+
+예를 들어, 최상위 클래스가 여러 provider 에 의존할 경우 생성자의 하위 클래스에서 super() 를 호출하는 것은 매우 별로일 수 있다. 
+
+이것을 피하기 위해 property level 에서 `@Inject()` decorator 를 사용할 수 있다.
+
+```typescript
+import { Injectable, Inject } from '@nestjs/common';
+
+@Injectable()
+export class HttpService<T> {
+  @Inject('HTTP_OPTIONS')
+  private readonly httpClient: T;
+}
+```
+
+> 클래스가 다른 provider 를 확장하지 않는 경우 constructor-based injection 을 선호해야한다.
+
+#### Provider registration
+
+이제 provider (`CatsService`) 를 정의했고, 이를 소비할 수 있는 `CatsController` 가 있으므로 우리는 주입을 수행할 수 있도록 이 서비스를 Nest 에 등록해야한다.
+
+모듈 파일 (`app.module.ts`) 를 수정하고 `@Module()` decorator 의 providers array 에 서비스를 추가한다.
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { CatsController } from './cats/cats.controller';
+import { CatsService } from './cats/cats.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController, CatsController],
+  providers: [AppService, CatsService],
+})
+export class AppModule {}
+```
+
+Nest 는 이제 `CatsController` 의 종속성을 해결할 수 있다.
+
+디렉터리 구조는 아래와 같다.
+
+```
+src
+|_____cats
+|     |_____dto
+|     |     |___create-cat.dto.ts
+|     |_____interfaces
+|     |     |___cat.interface.ts
+|     |_____cats.controller.ts
+|     |_____cats.service.ts
+|_____app.module.ts
+|_____main.ts
+```
+
+
+
